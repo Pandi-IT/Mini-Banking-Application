@@ -1,0 +1,336 @@
+<div class="dashboard-wrapper fade-in">
+  <!-- Navbar -->
+  <nav class="navbar glass">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        <span>BankEase Portal</span>
+      </div>
+      <div class="nav-user">
+        <div class="user-info">
+          <span class="user-name">{{ authService.currentUser()?.fullName }}</span>
+          <span class="user-role">{{ authService.currentUser()?.role }}</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="logout()">
+          <span>Log Out</span>
+          <svg style="margin-left: 0.5rem;" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Body -->
+  <main class="dashboard-content">
+    <div class="dashboard-header slide-up">
+      <div>
+        <h1>Welcome back, {{ authService.currentUser()?.fullName }}</h1>
+        <p>Manage your transactions and accounts securely</p>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-primary" (click)="showCreateModal.set(true)">
+          <svg style="margin-right: 0.5rem;" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          New Account
+        </button>
+        <button class="btn btn-secondary" [disabled]="!selectedAccount()" (click)="showDepositModal.set(true)">
+          Deposit
+        </button>
+        <button class="btn btn-secondary" [disabled]="!selectedAccount()" (click)="showWithdrawModal.set(true)">
+          Withdraw
+        </button>
+        <button class="btn btn-secondary" [disabled]="!selectedAccount()" (click)="showTransferModal.set(true)">
+          Transfer
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Widgets -->
+    <div class="summary-widgets slide-up" style="animation-delay: 0.1s">
+      <div class="widget-card glass">
+        <span class="widget-label">Total Assets Balance</span>
+        <span class="widget-value text-indigo">{{ totalBalance() | currency }}</span>
+      </div>
+      <div class="widget-card glass">
+        <span class="widget-label">Active Accounts</span>
+        <span class="widget-value">{{ accounts().length }}</span>
+      </div>
+      <div class="widget-card glass">
+        <span class="widget-label">Selected Account</span>
+        <span class="widget-value text-emerald">
+          {{ selectedAccount() ? selectedAccount()!.accountNumber : 'None' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Core Grid -->
+    <div class="dashboard-grid slide-up" style="animation-delay: 0.2s">
+      <!-- Left Column: Accounts List -->
+      <section class="accounts-section">
+        <h2 class="section-title">Your Accounts</h2>
+        @if (isLoadingAccounts()) {
+          <div class="loader-container"><div class="spinner"></div></div>
+        } @else {
+          @if (accounts().length === 0) {
+            <div class="empty-state glass">
+              <p>No active accounts found.</p>
+              <button class="btn btn-primary btn-sm" style="margin-top: 1rem;" (click)="showCreateModal.set(true)">
+                Create your first account
+              </button>
+            </div>
+          } @else {
+            <div class="accounts-list">
+              @for (acc of accounts(); track acc.id) {
+                <div class="account-card glass" 
+                     [class.active]="selectedAccount()?.id === acc.id"
+                     (click)="selectAccount(acc)">
+                  <div class="acc-card-header">
+                    <span class="acc-type">{{ acc.accountType }}</span>
+                    <span class="acc-badge" [class.savings]="acc.accountType === 'SAVINGS'"></span>
+                  </div>
+                  <span class="acc-num">{{ acc.accountNumber }}</span>
+                  <span class="acc-bal">{{ acc.balance | currency }}</span>
+                </div>
+              }
+            </div>
+          }
+        }
+      </section>
+
+      <!-- Right Column: Transactions History -->
+      <section class="transactions-section glass">
+        <div class="transactions-header">
+          <h2 class="section-title" style="margin-bottom: 0;">Transaction History</h2>
+          @if (selectedAccount()) {
+            <span class="history-sub">Showing activity for {{ selectedAccount()?.accountNumber }}</span>
+          }
+        </div>
+
+        @if (isLoadingTransactions()) {
+          <div class="loader-container"><div class="spinner text-primary"></div></div>
+        } @else {
+          @if (!selectedAccount()) {
+            <div class="empty-state">
+              <p>Select or create an account to view transaction history.</p>
+            </div>
+          } @else {
+            @if (transactions().length === 0) {
+              <div class="empty-state">
+                <p>No transactions found for this account.</p>
+              </div>
+            } @else {
+              <div class="table-responsive">
+                <table class="tx-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Description</th>
+                      <th>Amount</th>
+                      <th>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (tx of transactions(); track tx.id) {
+                      <tr>
+                        <td>
+                          <span class="tx-type-badge" 
+                                [class.deposit]="tx.type === 'DEPOSIT' || tx.type === 'TRANSFER_IN'"
+                                [class.withdrawal]="tx.type === 'WITHDRAWAL' || tx.type === 'TRANSFER_OUT'">
+                            {{ tx.type }}
+                          </span>
+                        </td>
+                        <td>{{ tx.description }}</td>
+                        <td class="tx-amount"
+                            [class.text-success]="tx.type === 'DEPOSIT' || tx.type === 'TRANSFER_IN'"
+                            [class.text-error]="tx.type === 'WITHDRAWAL' || tx.type === 'TRANSFER_OUT'">
+                          {{ tx.type === 'DEPOSIT' || tx.type === 'TRANSFER_IN' ? '+' : '-' }}{{ tx.amount | currency }}
+                        </td>
+                        <td class="tx-time">{{ tx.timestamp | date:'short' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Footer -->
+              <div class="table-pagination">
+                <span class="pagination-info">
+                  Page {{ currentPage() + 1 }} of {{ totalPages() }} ({{ totalElements() }} items)
+                </span>
+                <div class="pagination-controls">
+                  <button class="btn btn-secondary btn-sm" 
+                          [disabled]="currentPage() === 0" 
+                          (click)="changePage(-1)">
+                    Previous
+                  </button>
+                  <button class="btn btn-secondary btn-sm" 
+                          [disabled]="currentPage() >= totalPages() - 1" 
+                          (click)="changePage(1)">
+                    Next
+                  </button>
+                </div>
+              </div>
+            }
+          }
+        }
+      </section>
+    </div>
+  </main>
+
+  <!-- MODALS -->
+  
+  <!-- Create Account Modal -->
+  @if (showCreateModal()) {
+    <div class="modal-overlay" (click)="showCreateModal.set(false)">
+      <div class="modal-content glass" (click)="$event.stopPropagation()">
+        <h2>Open New Account</h2>
+        <form (ngSubmit)="onCreateAccountSubmit()" #createForm="ngForm">
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Account Type</label>
+            <select class="form-input" [(ngModel)]="newAccountType" name="acctType">
+              <option value="SAVINGS">Savings Account</option>
+              <option value="CHECKING">Checking Account</option>
+            </select>
+          </div>
+          <div class="modal-actions" style="margin-top: 2rem;">
+            <button type="button" class="btn btn-secondary" (click)="showCreateModal.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSubmittingAction()">
+              @if (isSubmittingAction()) { <span class="spinner"></span> Creating... } @else { Open Account }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Deposit Modal -->
+  @if (showDepositModal()) {
+    <div class="modal-overlay" (click)="showDepositModal.set(false)">
+      <div class="modal-content glass" (click)="$event.stopPropagation()">
+        <h2>Make a Deposit</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">
+          To account: {{ selectedAccount()?.accountNumber }}
+        </p>
+        <form (ngSubmit)="onDepositSubmit()" #depositForm="ngForm">
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Deposit Amount (USD)</label>
+            <input type="number" 
+                   class="form-input" 
+                   [(ngModel)]="depositAmount" 
+                   name="amount" 
+                   required 
+                   min="0.01" 
+                   step="0.01"
+                   #depAmt="ngModel" />
+            @if (depAmt.invalid && (depAmt.dirty || depAmt.touched)) {
+              <span style="color: var(--error); font-size: 0.75rem; margin-top: 0.35rem;">
+                Please enter a positive amount
+              </span>
+            }
+          </div>
+          <div class="modal-actions" style="margin-top: 2rem;">
+            <button type="button" class="btn btn-secondary" (click)="showDepositModal.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="depositForm.invalid || isSubmittingAction()">
+              @if (isSubmittingAction()) { <span class="spinner"></span> Processing... } @else { Deposit }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Withdraw Modal -->
+  @if (showWithdrawModal()) {
+    <div class="modal-overlay" (click)="showWithdrawModal.set(false)">
+      <div class="modal-content glass" (click)="$event.stopPropagation()">
+        <h2>Withdraw Funds</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">
+          From account: {{ selectedAccount()?.accountNumber }} (Available: {{ selectedAccount()?.balance | currency }})
+        </p>
+        <form (ngSubmit)="onWithdrawSubmit()" #withdrawForm="ngForm">
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Withdraw Amount (USD)</label>
+            <input type="number" 
+                   class="form-input" 
+                   [(ngModel)]="withdrawAmount" 
+                   name="amount" 
+                   required 
+                   min="0.01" 
+                   [max]="selectedAccount()?.balance || 0"
+                   step="0.01"
+                   #wthAmt="ngModel" />
+            @if (wthAmt.invalid && (wthAmt.dirty || wthAmt.touched)) {
+              <span style="color: var(--error); font-size: 0.75rem; margin-top: 0.35rem;">
+                Please enter a positive amount not exceeding your balance
+              </span>
+            }
+          </div>
+          <div class="modal-actions" style="margin-top: 2rem;">
+            <button type="button" class="btn btn-secondary" (click)="showWithdrawModal.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="withdrawForm.invalid || isSubmittingAction()">
+              @if (isSubmittingAction()) { <span class="spinner"></span> Processing... } @else { Withdraw }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Transfer Modal -->
+  @if (showTransferModal()) {
+    <div class="modal-overlay" (click)="showTransferModal.set(false)">
+      <div class="modal-content glass" (click)="$event.stopPropagation()">
+        <h2>Transfer Funds</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">
+          From account: {{ selectedAccount()?.accountNumber }} (Available: {{ selectedAccount()?.balance | currency }})
+        </p>
+        <form (ngSubmit)="onTransferSubmit()" #transferForm="ngForm">
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <label class="form-label">Destination Account Number</label>
+            <input type="text" 
+                   class="form-input" 
+                   [(ngModel)]="transferTarget" 
+                   name="destAcc" 
+                   placeholder="e.g. BA0000000000"
+                   required 
+                   #destAccInput="ngModel" />
+            @if (destAccInput.invalid && (destAccInput.dirty || destAccInput.touched)) {
+              <span style="color: var(--error); font-size: 0.75rem; margin-top: 0.35rem;">
+                Destination account is required
+              </span>
+            }
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label">Transfer Amount (USD)</label>
+            <input type="number" 
+                   class="form-input" 
+                   [(ngModel)]="transferAmount" 
+                   name="amount" 
+                   required 
+                   min="0.01" 
+                   [max]="selectedAccount()?.balance || 0"
+                   step="0.01"
+                   #transAmt="ngModel" />
+            @if (transAmt.invalid && (transAmt.dirty || transAmt.touched)) {
+              <span style="color: var(--error); font-size: 0.75rem; margin-top: 0.35rem;">
+                Please enter a positive amount not exceeding your balance
+              </span>
+            }
+          </div>
+
+          <div class="modal-actions" style="margin-top: 2rem;">
+            <button type="button" class="btn btn-secondary" (click)="showTransferModal.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="transferForm.invalid || isSubmittingAction()">
+              @if (isSubmittingAction()) { <span class="spinner"></span> Processing... } @else { Transfer }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
