@@ -1,0 +1,76 @@
+services:
+  # 1. MySQL Database Service (Private)
+  - type: pserv
+    name: bankease-db
+    plan: free
+    runtime: image
+    image: mysql:8.0
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        generateValue: true
+      - key: MYSQL_DATABASE
+        value: bankease_db
+      - key: MYSQL_USER
+        value: root
+
+  # 2. Redis Caching Service (Private)
+  - type: pserv
+    name: bankease-redis
+    plan: free
+    runtime: image
+    image: redis:alpine
+
+  # 3. Spring Boot Backend API Service (Web Service)
+  - type: web
+    name: bankease-backend
+    plan: free
+    runtime: docker
+    dockerContext: ./Backend
+    dockerfilePath: ./Backend/Dockerfile
+    envVars:
+      # Database connection
+      - key: DB_HOST
+        fromService:
+          type: pserv
+          name: bankease-db
+          property: host
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        value: bankease_db
+      - key: DB_USERNAME
+        value: root
+      - key: DB_PASSWORD
+        fromService:
+          type: pserv
+          name: bankease-db
+          envVarKey: MYSQL_ROOT_PASSWORD
+      
+      # Redis connection
+      - key: SPRING_DATA_REDIS_HOST
+        fromService:
+          type: pserv
+          name: bankease-redis
+          property: host
+      - key: SPRING_DATA_REDIS_PORT
+        value: "6379"
+
+      # Application security configurations
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: "3600000"
+      - key: SPRING_APP_NAME
+        value: bankease_core
+
+      # CORS Configuration (optional fallback if CORS is triggered outside Nginx proxy)
+      - key: CORS_ALLOWED_ORIGINS
+        value: "http://localhost:4200,http://localhost"
+
+  # 4. Angular Frontend & Nginx Proxy (Web Service)
+  - type: web
+    name: bankease-frontend
+    plan: free
+    runtime: docker
+    dockerContext: ./frontend
+    dockerfilePath: ./frontend/Dockerfile

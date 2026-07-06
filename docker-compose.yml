@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
+  bankease-backend:
+    build: ./Backend
     ports:
       - "8082:8080"
     environment:
@@ -43,7 +43,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - app
+      - bankease-backend
     networks:
       - bankease-network
 

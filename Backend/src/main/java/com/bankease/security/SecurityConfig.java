@@ -45,7 +45,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost", "http://localhost:80"));
+        String envOrigins = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (envOrigins != null && !envOrigins.trim().isEmpty()) {
+            corsConfig.setAllowedOrigins(java.util.Arrays.stream(envOrigins.split(","))
+                    .map(String::trim)
+                    .collect(java.util.stream.Collectors.toList()));
+        } else {
+            corsConfig.setAllowedOrigins(List.of("http://localhost:4200", "http://localhost", "http://localhost:80"));
+        }
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Idempotency-Key", "Cache-Control"));
         corsConfig.setExposedHeaders(List.of("X-Idempotency-Key"));
