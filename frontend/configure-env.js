@@ -4,9 +4,9 @@ const path = require('path');
 // Scan for the separated .env file in the current directory
 const envPath = path.join(__dirname, '.env');
 
-let backendUrl = '';
+let backendUrl = process.env.FRONTEND_BACKEND_API_URL || '';
 
-if (fs.existsSync(envPath)) {
+if (!backendUrl && fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
   const lines = envContent.split(/\r?\n/);
   for (let line of lines) {
