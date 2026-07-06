@@ -1,28 +1,5 @@
 services:
-  # 1. MySQL Database Service (Private)
-  - type: pserv
-    name: bankease-db
-    plan: free
-    runtime: image
-    image:
-      url: docker.io/library/mysql:8.0
-    envVars:
-      - key: MYSQL_ROOT_PASSWORD
-        generateValue: true
-      - key: MYSQL_DATABASE
-        value: bankease_db
-      - key: MYSQL_USER
-        value: root
-
-  # 2. Redis Caching Service (Private)
-  - type: pserv
-    name: bankease-redis
-    plan: free
-    runtime: image
-    image:
-      url: docker.io/library/redis:alpine
-
-  # 3. Spring Boot Backend API Service (Web Service)
+  # 1. Spring Boot Backend API Service (Web Service)
   - type: web
     name: bankease-backend
     plan: free
@@ -34,32 +11,21 @@ services:
       - key: JAVA_OPTS
         value: "-Xmx350m -Xms256m"
 
-      # Database connection
+      # External Database Connection (e.g., Aiven MySQL)
       - key: DB_HOST
-        fromService:
-          type: pserv
-          name: bankease-db
-          property: host
+        sync: false
       - key: DB_PORT
         value: "3306"
       - key: DB_NAME
-        value: bankease_db
+        sync: false
       - key: DB_USERNAME
-        value: root
+        sync: false
       - key: DB_PASSWORD
-        fromService:
-          type: pserv
-          name: bankease-db
-          envVarKey: MYSQL_ROOT_PASSWORD
+        sync: false
       
-      # Redis connection
-      - key: SPRING_DATA_REDIS_HOST
-        fromService:
-          type: pserv
-          name: bankease-redis
-          property: host
-      - key: SPRING_DATA_REDIS_PORT
-        value: "6379"
+      # External Redis Connection (e.g., Upstash Redis URL: rediss://...)
+      - key: SPRING_DATA_REDIS_URL
+        sync: false
 
       # Application security configurations
       - key: JWT_SECRET
@@ -73,7 +39,7 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         value: "http://localhost:4200,http://localhost"
 
-  # 4. Angular Frontend & Nginx Proxy (Web Service)
+  # 2. Angular Frontend & Nginx Proxy (Web Service)
   - type: web
     name: bankease-frontend
     plan: free
