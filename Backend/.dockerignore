@@ -1,9 +1,0 @@
-target/
-.git/
-.idea/
-*.iml
-test/
-mvnw
-mvnw.cmd
-.gitignore
-HELP.md
