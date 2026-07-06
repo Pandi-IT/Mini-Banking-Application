@@ -4,7 +4,8 @@ services:
     name: bankease-db
     plan: free
     runtime: image
-    image: mysql:8.0
+    image:
+      url: docker.io/library/mysql:8.0
     envVars:
       - key: MYSQL_ROOT_PASSWORD
         generateValue: true
@@ -18,7 +19,8 @@ services:
     name: bankease-redis
     plan: free
     runtime: image
-    image: redis:alpine
+    image:
+      url: docker.io/library/redis:alpine
 
   # 3. Spring Boot Backend API Service (Web Service)
   - type: web
