@@ -1,11 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// Scan for the centralized .env file in the parent directory, fallback to current directory
-let envPath = path.join(__dirname, '../.env');
-if (!fs.existsSync(envPath)) {
-  envPath = path.join(__dirname, '.env');
-}
+// Scan for the separated .env file in the current directory
+const envPath = path.join(__dirname, '.env');
 
 let backendUrl = '';
 

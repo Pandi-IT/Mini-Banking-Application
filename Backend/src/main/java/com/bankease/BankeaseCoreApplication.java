@@ -20,7 +20,7 @@ public class BankeaseCoreApplication {
 		try {
 			Path path = Paths.get(".env");
 			if (!Files.exists(path)) {
-				path = Paths.get("../.env");
+				path = Paths.get("Backend/.env");
 			}
 			if (Files.exists(path)) {
 				List<String> lines = Files.readAllLines(path);
