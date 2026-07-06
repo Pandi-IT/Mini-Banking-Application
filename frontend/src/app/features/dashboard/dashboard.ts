@@ -106,7 +106,7 @@ export class Dashboard implements OnInit {
     this.transactionService.getTransactionHistory(account.id, this.currentPage(), this.pageSize()).subscribe({
       next: (res) => {
         this.isLoadingTransactions.set(false);
-        if (res.success && res.data) {
+        if (res && res.success && res.data) {
           this.transactions.set(res.data.content);
           this.totalPages.set(res.data.totalPages);
           this.totalElements.set(res.data.totalElements);
@@ -136,12 +136,12 @@ export class Dashboard implements OnInit {
     this.accountService.createAccount(user.id, this.newAccountType).subscribe({
       next: (res) => {
         this.isSubmittingAction.set(false);
-        if (res.success) {
+        if (res && res.success) {
           this.notificationService.success('Account created successfully!');
           this.showCreateModal.set(false);
           this.loadAccounts(false); // reload accounts but keep selection if possible
         } else {
-          this.notificationService.error(res.message);
+          this.notificationService.error(res?.message || 'Failed to create account.');
         }
       },
       error: (err) => {
@@ -160,14 +160,14 @@ export class Dashboard implements OnInit {
     this.transactionService.deposit(account.accountNumber, this.depositAmount).subscribe({
       next: (res) => {
         this.isSubmittingAction.set(false);
-        if (res.success) {
+        if (res && res.success) {
           this.notificationService.success(`Successfully deposited $${this.depositAmount}`);
           this.showDepositModal.set(false);
           this.depositAmount = 0;
           this.loadAccounts(false);
           this.loadTransactions();
         } else {
-          this.notificationService.error(res.message);
+          this.notificationService.error(res?.message || 'Deposit failed.');
         }
       },
       error: (err) => {
@@ -186,14 +186,14 @@ export class Dashboard implements OnInit {
     this.transactionService.withdraw(account.accountNumber, this.withdrawAmount).subscribe({
       next: (res) => {
         this.isSubmittingAction.set(false);
-        if (res.success) {
+        if (res && res.success) {
           this.notificationService.success(`Successfully withdrew $${this.withdrawAmount}`);
           this.showWithdrawModal.set(false);
           this.withdrawAmount = 0;
           this.loadAccounts(false);
           this.loadTransactions();
         } else {
-          this.notificationService.error(res.message);
+          this.notificationService.error(res?.message || 'Withdrawal failed.');
         }
       },
       error: (err) => {
@@ -212,7 +212,7 @@ export class Dashboard implements OnInit {
     this.transactionService.transfer(account.accountNumber, this.transferTarget, this.transferAmount).subscribe({
       next: (res) => {
         this.isSubmittingAction.set(false);
-        if (res.success) {
+        if (res && res.success) {
           this.notificationService.success(`Successfully transferred $${this.transferAmount} to ${this.transferTarget}`);
           this.showTransferModal.set(false);
           this.transferTarget = '';
@@ -220,7 +220,7 @@ export class Dashboard implements OnInit {
           this.loadAccounts(false);
           this.loadTransactions();
         } else {
-          this.notificationService.error(res.message);
+          this.notificationService.error(res?.message || 'Transfer failed.');
         }
       },
       error: (err) => {

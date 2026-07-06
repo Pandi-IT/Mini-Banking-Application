@@ -217,11 +217,11 @@ export class Register {
     this.authService.register(this.fullName, this.email, this.password).subscribe({
       next: (res) => {
         this.isLoading.set(false);
-        if (res.success) {
+        if (res && res.success) {
           this.notificationService.success('Registration successful! Please log in.');
           this.router.navigate(['/login']);
         } else {
-          this.notificationService.error(res.message || 'Registration failed.');
+          this.notificationService.error(res?.message || 'Registration failed.');
         }
       },
       error: (err) => {

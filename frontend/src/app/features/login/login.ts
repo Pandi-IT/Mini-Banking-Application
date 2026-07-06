@@ -174,11 +174,11 @@ export class Login {
     this.authService.login(this.email, this.password).subscribe({
       next: (res) => {
         this.isLoading.set(false);
-        if (res.success) {
+        if (res && res.success) {
           this.notificationService.success('Welcome back, ' + res.data.fullName + '!');
           this.router.navigate(['/dashboard']);
         } else {
-          this.notificationService.error(res.message || 'Login failed.');
+          this.notificationService.error(res?.message || 'Login failed.');
         }
       },
       error: (err) => {
