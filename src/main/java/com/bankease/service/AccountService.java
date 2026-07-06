@@ -7,6 +7,7 @@ import com.bankease.repository.AccountRepository;
 import com.bankease.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,12 +59,12 @@ public class AccountService {
     }
 
     @Transactional
-    @CacheEvict(value = "accounts", key = "#account.accountNumber")
+    @Caching(evict = {
+        @CacheEvict(value = "accounts", key = "#account.accountNumber"),
+        @CacheEvict(value = "user_accounts", key = "#account.user.id")
+    })
     public void updateBalance(Account account, double newBalance) {
         account.setBalance(newBalance);
         accountRepository.save(account);
-        // Also evict user_accounts cache as balance changed
-        // This is complex as we don't have userId here directly in a clean way without entity navigation
-        // But for "Clean Code", we should probably handle it or use a broader evict.
     }
 }
