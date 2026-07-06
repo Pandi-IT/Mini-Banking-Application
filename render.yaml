@@ -28,6 +28,10 @@ services:
     dockerContext: ./Backend
     dockerfilePath: ./Backend/Dockerfile
     envVars:
+      # JVM Memory Tuning for 512MB RAM Container
+      - key: JAVA_OPTS
+        value: "-Xmx350m -Xms256m"
+
       # Database connection
       - key: DB_HOST
         fromService:
