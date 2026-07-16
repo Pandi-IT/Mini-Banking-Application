@@ -2,10 +2,18 @@ package com.bankease.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import java.util.*;
+import lombok.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,66 +29,22 @@ public class User {
     @Column(nullable = false)
     private String password; // BCrypt hashed
 
+    @Builder.Default
     @Column(nullable = false)
     private String role = "USER"; // USER or ADMIN
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean enabled = true; // For block/unblock
+
+    private String profilePictureUrl;
+
+    private String passwordResetToken;
+
+    private LocalDateTime passwordResetExpiry;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
+    @Builder.Default
     private List<Account> accounts = new ArrayList<>();
-
-    // constructors, getters, setters
-    public User() {
-    }
-
-    public User(String fullName, String email, String password, String role) {
-        this.fullName = fullName;
-        this.email = email;
-        this.password = password;
-        this.role = role;
-    }
-
-    // getters & setters ...
-    public Long getId() {
-        return id;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String n) {
-        this.fullName = n;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String e) {
-        this.email = e;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String p) {
-        this.password = p;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String r) {
-        this.role = r;
-    }
-
-    public List<Account> getAccounts() {
-        return accounts;
-    }
-
-    public void setAccounts(List<Account> a) {
-        this.accounts = a;
-    }
 }

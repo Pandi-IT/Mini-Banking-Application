@@ -3,12 +3,20 @@ package com.bankease.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import java.util.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "accounts", indexes = {
         @Index(name = "idx_user_id", columnList = "user_id")
 })
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,8 +28,13 @@ public class Account {
     @Column(nullable = false)
     private String accountType; // SAVINGS, CURRENT
 
+    @Builder.Default
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
+
+    @Builder.Default
     @Column(nullable = false)
-    private Double balance = 0.0;
+    private String status = "ACTIVE"; // ACTIVE, BLOCKED
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -30,60 +43,6 @@ public class Account {
 
     @JsonIgnore
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Transaction> transactions = new ArrayList<>();
-
-    public Account() {
-    }
-
-    public Account(String accountNumber, String accountType, Double balance, User user) {
-        this.accountNumber = accountNumber;
-        this.accountType = accountType;
-        this.balance = balance;
-        this.user = user;
-    }
-
-    // getters / setters
-    public Long getId() {
-        return id;
-    }
-
-    public String getAccountNumber() {
-        return accountNumber;
-    }
-
-    public void setAccountNumber(String an) {
-        this.accountNumber = an;
-    }
-
-    public String getAccountType() {
-        return accountType;
-    }
-
-    public void setAccountType(String t) {
-        this.accountType = t;
-    }
-
-    public Double getBalance() {
-        return balance;
-    }
-
-    public void setBalance(Double b) {
-        this.balance = b;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User u) {
-        this.user = u;
-    }
-
-    public List<Transaction> getTransactions() {
-        return transactions;
-    }
-
-    public void setTransactions(List<Transaction> t) {
-        this.transactions = t;
-    }
 }

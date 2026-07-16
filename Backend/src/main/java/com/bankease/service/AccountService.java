@@ -8,9 +8,11 @@ import com.bankease.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
@@ -27,17 +29,19 @@ public class AccountService {
     public Account createAccount(Long userId, String accountType) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-        Account acct = new Account();
-        acct.setAccountType(accountType);
-        acct.setAccountNumber(generateAccountNumber());
-        acct.setBalance(0.0);
-        acct.setUser(user);
+        
+        Account acct = Account.builder()
+                .accountType(accountType)
+                .accountNumber(generateAccountNumber())
+                .balance(BigDecimal.ZERO)
+                .status("ACTIVE")
+                .user(user)
+                .build();
         return accountRepository.save(acct);
     }
 
     @Cacheable(value = "user_accounts", key = "#userId")
     public List<Account> getAccountsByUser(Long userId) {
-        // optionally confirm user exists
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with ID: " + userId);
         }
@@ -50,7 +54,9 @@ public class AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountNumber));
     }
 
-    public Optional<Account> findById(Long id){ return accountRepository.findById(id); }
+    public Optional<Account> findById(Long id){ 
+        return accountRepository.findById(id); 
+    }
 
     private String generateAccountNumber() {
         String prefix = "BA";
@@ -63,8 +69,26 @@ public class AccountService {
         @CacheEvict(value = "accounts", key = "#account.accountNumber"),
         @CacheEvict(value = "user_accounts", key = "#account.user.id")
     })
-    public void updateBalance(Account account, double newBalance) {
+    public void updateBalance(Account account, BigDecimal newBalance) {
         account.setBalance(newBalance);
         accountRepository.save(account);
+    }
+
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "accounts", key = "#accountNumber"),
+        @CacheEvict(value = "user_accounts", allEntries = true)
+    })
+    public Account toggleAccountStatus(String accountNumber, String status) {
+        Account account = getByAccountNumber(accountNumber);
+        if (!status.equals("ACTIVE") && !status.equals("BLOCKED")) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        account.setStatus(status);
+        return accountRepository.save(account);
+    }
+
+    public Page<Account> getAllAccounts(Pageable pageable) {
+        return accountRepository.findAll(pageable);
     }
 }

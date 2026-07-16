@@ -24,7 +24,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private Bucket createNewBucket() {
         return Bucket.builder()
-                .addLimit(limit -> limit.capacity(10).refillGreedy(10, Duration.ofMinutes(1)))
+                .addLimit(limit -> limit.capacity(100).refillGreedy(100, Duration.ofMinutes(1)))
                 .build();
     }
 
@@ -32,7 +32,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         
-        String ip = request.getRemoteAddr();
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        } else {
+            // X-Forwarded-For can contain a comma-separated list of proxy IPs.
+            // The first one is the client's original IP.
+            int commaIndex = ip.indexOf(',');
+            if (commaIndex != -1) {
+                ip = ip.substring(0, commaIndex).trim();
+            }
+        }
+
         Bucket bucket = buckets.computeIfAbsent(ip, k -> createNewBucket());
 
         if (bucket.tryConsume(1)) {
